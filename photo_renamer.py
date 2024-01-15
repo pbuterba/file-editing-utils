@@ -8,7 +8,6 @@
 @author  Preston Buterbaugh
 @credit  Piexif info from https://piexif.readthedocs.io/en/latest/functions.html
 @credit  Conversion from bytes to string from https://www.pythonpool.com/python-bytes-to-string/
-@credit  Colored text printing from https://www.geeksforgeeks.org/print-colors-python-terminal/
 """
 
 # Imports
@@ -16,29 +15,12 @@ from argparse import ArgumentParser
 import os
 import sys
 
-from colorama import Fore, Style
 import piexif
+
+from custom.prestonpython import red, green
 
 seq_nums = {}
 """A dictionary mapping each date-time string to the next number that should be appended to a photo at that time"""
-
-
-def red(text: str) -> str:
-    """
-    @brief  Helper function to print text in red
-    @param  text (str): The text to print red
-    @return (str) The red text
-    """
-    return Fore.RED + text + Style.RESET_ALL
-
-
-def green(text: str) -> str:
-    """
-    @brief  Helper function to print text in green
-    @param  text (str): The text to print green
-    @return (str) The green text
-    """
-    return Fore.GREEN + text + Style.RESET_ALL
 
 
 def rename_file(filename: str) -> int:
