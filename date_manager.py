@@ -1,17 +1,43 @@
-# Adjust date code from https://stackoverflow.com/questions/33031663/how-to-change-image-captured-date-in-python
-# Piexif info from https://piexif.readthedocs.io/en/latest/functions.html
-# Conversion from bytes to string from https://www.pythonpool.com/python-bytes-to-string/
+"""
+@package    date_manager
+@brief      A script to allow editing the datestamps in JPG photo files either manually, or by copying the "Date taken" field
+            to other date fields
 
+@date       1/9/2022
+@updated    1/14/2024
+
+@author     Preston Buterbaugh
+@credit     Adjust date code from https://stackoverflow.com/questions/33031663/how-to-change-image-captured-date-in-python
+@credit     Piexif info from https://piexif.readthedocs.io/en/latest/functions.html
+@credit     Conversion from bytes to string from https://www.pythonpool.com/python-bytes-to-string/
+"""
+
+# Imports
 from datetime import datetime
 import os
 import sys
 
 import piexif
+from piexif import InvalidImageDataError
 
 
-def adjust_date(filename, year, month, day, hour, minute, second):
+from custom.prestonpython import red, green
+
+
+def copy_date_taken(filename: str) -> int:
+    """
+    @brief  Takes the name of a JPG file and copies its "Date Taken" field to the picture's date field
+    @param  filename (str): The filename of the photo to be edited, including the extension
+    @return (int)
+            - 0 if successful
+            - 1 otherwise
+    """
     # Create a dictionary of the photo's metadata
-    exif_dict = piexif.load(filename)
+    try:
+        exif_dict = piexif.load(filename)
+    except InvalidImageDataError:
+        print(f'{red("ERROR")} - {filename} is not a JPG image')
+        return 1
 
     # Create a datetime variable with the new date and time
     new_date = datetime(year, month, day, hour, minute, second).strftime("%Y:%m:%d %H:%M:%S")
