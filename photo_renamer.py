@@ -109,7 +109,7 @@ def main(directory: str) -> int:
         print(f'The specified directory "{red(directory)}" does not exist')
         return 1
 
-    file_list = os.listdir(sys.argv[1])
+    file_list = os.listdir(directory)
     for filename in file_list:
         if filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg'):
             rename_file(filename)
