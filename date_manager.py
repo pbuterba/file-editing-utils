@@ -88,13 +88,13 @@ def adjust_date(filename: str, date: List | None = None) -> int:
 
     # Print date
     if date_taken_hour == 0:
-        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} 12:{str(date_taken_minute).zfill(2)}")} AM')
+        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} 12:{str(date_taken_minute).zfill(2)} AM")}')
     elif date_taken_hour == 12:
-        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} 12:{str(date_taken_minute).zfill(2)}")} PM')
+        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} 12:{str(date_taken_minute).zfill(2)} PM")}')
     elif date_taken_hour > 12:
-        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} {date_taken_hour - 12}:{str(date_taken_minute).zfill(2)}")} PM')
+        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} {date_taken_hour - 12}:{str(date_taken_minute).zfill(2)} PM")}')
     else:
-        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} {date_taken_hour}:{str(date_taken_minute).zfill(2)}")} AM')
+        print(f'Setting date for {filename} to {green(f"{date_taken_month}/{date_taken_day}/{date_taken_year} {date_taken_hour}:{str(date_taken_minute).zfill(2)} AM")}')
 
     date_taken = f'{date_taken_year}:{date_taken_month}:{date_taken_day} {date_taken_hour}:{date_taken_minute}:{date_taken_second}'
 
@@ -260,7 +260,7 @@ def has_date_taken(multiple: bool) -> bool:
             print('Do the photos have a "date taken" field to copy the date from? If not, you can manually enter the date and time')
         else:
             print('Does the photo have a "date taken" field to copy the date from? If not, you can manually enter the date and time')
-        key = input('Type y or n')
+        key = input('Type y or n: ')
         if key != 'y' and key != 'n':
             if multiple:
                 print('Please type y or n to indicate if the photos have a "date taken" field')
