@@ -74,8 +74,14 @@ def scan_directory(path: str, threshold: int) -> Dict:
                 })
             num_files = num_files + 1
             directory_size = directory_size + file_size
+
+    if os.path.basename(path) == '':
+        dir_name = 'C:'
+    else:
+        dir_name = os.path.basename(path)
+
     return {
-        'name': os.path.basename(path),
+        'name': dir_name,
         'files': found_files,
         'num_files': num_files,
         'total_size': directory_size
