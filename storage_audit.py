@@ -76,7 +76,7 @@ def scan_directory(path: str, threshold: int) -> Dict:
             directory_size = directory_size + file_size
 
     if os.path.basename(path) == '':
-        dir_name = 'C:'
+        dir_name = path[0:len(path) - 1]
     else:
         dir_name = os.path.basename(path)
 
@@ -156,6 +156,6 @@ def main(path: str, threshold: int) -> int:
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--directory', '-d', default='C:/', help='The name of the directory to scan')
-    parser.add_argument('--threshold', '-t', default=1000000000, help='The number of bytes at which or above a file should be listed')
+    parser.add_argument('--threshold', '-t', type=int, default=1000000000, help='The number of bytes at which or above a file should be listed')
     args = parser.parse_args()
     sys.exit(main(args.directory, args.threshold))
