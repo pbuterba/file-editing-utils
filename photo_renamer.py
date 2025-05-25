@@ -3,7 +3,7 @@
 @brief   A script to re-name JPG files based on their "Date Taken" attribute
 
 @date    12/16/2023
-@updated 1/14/2024
+@updated 5/24/2025
 
 @author  Preston Buterbaugh
 @credit  Piexif info from https://piexif.readthedocs.io/en/latest/functions.html
@@ -111,6 +111,9 @@ def main(directory: str) -> int:
 
     file_list = os.listdir(directory)
     for filename in file_list:
+        if os.path.isdir(filename):
+            main(f'{os.getcwd()}\\{filename}')
+            os.chdir(directory)
         if filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg'):
             rename_file(filename)
 
