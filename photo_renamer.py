@@ -1,9 +1,9 @@
 """
 @package photo_renamer
-@brief   A script to re-name JPG files based on their "Date Taken" attribute
+@brief   A script to re-name JPG and MP4 files based on their "Date Taken" attribute
 
 @date    12/16/2023
-@updated 5/24/2025
+@updated 11/8/2026
 
 @author  Preston Buterbaugh
 @credit  Piexif info from https://piexif.readthedocs.io/en/latest/functions.html
@@ -16,11 +16,99 @@ import os
 import sys
 
 import piexif
+import mutagen.mp4
+from mutagen.mp4 import MP4
 
 from custom.prestonpython import red, green
 
+MONTH_FULL_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+""" All month names """
+
+MONTH_ABBREVIATIONS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+""" Month three letter abbreviations"""
+
 seq_nums = {}
 """A dictionary mapping each date-time string to the next number that should be appended to a photo at that time"""
+
+
+def manual_date_entry(filename: str) -> (int, int, int, int, int):
+    """
+    @brief  Allows the user to manually enter a date, ideally with as little effort as possible
+    @param  filename: The name of the file for which the date is being input
+    @return (int, int, int, int, int) The components of the date, in order year, month, day, hour, minute
+    """
+    valid_date = False
+
+    while not valid_date:
+        video_date_string = input(f"Enter the date components for {green(filename)}, separated by spaces (Year, Month, Day, Hour, Minute: ")
+        while len(video_date_string.split(" ")) != 5:
+            video_date_string = input("Enter all 5 components of the date (Year, Month, Day, Hour, Minute")
+
+        year, month, day, hour, minute = video_date_string.split(" ")
+
+        # Process year
+        try:
+            year = int(year)
+        except ValueError:
+            print(f"Invalid year '{red(year)}'")
+            continue
+
+        # Process month
+        if month in MONTH_FULL_NAMES:
+            month = str(MONTH_FULL_NAMES.index(month) + 1).zfill(2)
+        elif month in MONTH_ABBREVIATIONS:
+            month = str(MONTH_ABBREVIATIONS.index(month) + 1).zfill(2)
+        else:
+            # Parse month as number
+            try:
+                month_num = int(month)
+            except ValueError:
+                month_num = -1
+
+            if 1 <= month_num <= 12:
+                month = str(month_num).zfill(2)
+            else:
+                print(f"Invalid month '{red(month)}' entered")
+                continue
+
+        # Process day
+        try:
+            day = int(day)
+        except ValueError:
+            print(f"Invalid day '{red(day)}'")
+            continue
+
+        # Process hour
+        try:
+            hour = int(hour)
+        except ValueError:
+            print(f"Invalid hour '{red(hour)}'")
+            continue
+
+        # Process minute
+        try:
+            minute = int(minute)
+        except ValueError:
+            print(f"Invalid minute '{red(minute)}'")
+            continue
+
+        return year, month, day, hour, minute
+
+
+def military_to_standard_time(hour: int) -> (int, str):
+    """
+    @brief  Converts from an hour on the 24-hour scale to an hour on the twelve-hour scale
+    @param  hour: The hour on the 24-hour scale
+    @return (int, str) The hour on the 12-hour scale, and "AM" or "PM"
+    """
+    if hour == 0:
+        return 12, "AM"
+    elif hour < 12:
+        return hour, "AM"
+    elif hour == 12:
+        return 12, "PM"
+    else:
+        return hour % 12, "PM"
 
 
 def rename_file(filename: str) -> int:
@@ -32,41 +120,54 @@ def rename_file(filename: str) -> int:
             - 0 if the file was successfully renamed
             - 1 if an error occurred
     """
-    # Create a dictionary of the photo's metadata
-    try:
-        exif_dict = piexif.load(filename)
-    except piexif.InvalidImageDataError:
-        print(f'{red("ERROR")} - Specified file "{filename}" is not a JPG file')
-        return 1
+    if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
+        # Get date taken from a photo
+        extension = ".jpg"
+        try:
+            exif_dict = piexif.load(filename)
+        except piexif.InvalidImageDataError:
+            print(f'{red("ERROR")} - Could not load image data from "{filename}"')
+            return 1
 
-    # Get date taken
-    try:
-        date_taken_bytes = exif_dict['Exif'][piexif.ExifIFD.DateTimeOriginal]
-    except KeyError:
-        print(f'{filename} could not be renamed because it has no "date taken" attribute')
-        return 1
-    date_taken = date_taken_bytes.decode('utf-8')
-    date_taken_date_component = date_taken.split(' ')[0]
-    date_taken_time_component = date_taken.split(' ')[1]
+        # Get date taken
+        try:
+            date_taken_bytes = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
+        except KeyError:
+            print(f'{filename} could not be renamed because it has no "date taken" attribute')
+            return 1
 
-    date_taken_year = int(date_taken_date_component.split(':')[0])
-    date_taken_month = int(date_taken_date_component.split(':')[1])
-    date_taken_day = int(date_taken_date_component.split(':')[2])
+        date_taken_string = date_taken_bytes.decode("utf-8")
 
-    date_taken_hour = int(date_taken_time_component.split(':')[0])
-    date_taken_minute = int(date_taken_time_component.split(':')[1])
-
-    # Print photo taken time
-    if date_taken_hour == 0:
-        print(f'{filename} was taken on {date_taken_month}/{date_taken_day}/{date_taken_year} at 12:{str(date_taken_minute).zfill(2)} AM')
-    elif date_taken_hour == 12:
-        print(f'{filename} was taken on {date_taken_month}/{date_taken_day}/{date_taken_year} at 12:{str(date_taken_minute).zfill(2)} PM')
-    elif date_taken_hour > 12:
-        print(f'{filename} was taken on {date_taken_month}/{date_taken_day}/{date_taken_year} at {date_taken_hour - 12}:{str(date_taken_minute).zfill(2)} PM')
+        date_taken, time_taken = date_taken_string.split(" ")
+        year, month, day = [int(i) for i in date_taken.split(":")]
+        hour, minute = [int(i) for i in time_taken.split(":")]
     else:
-        print(f'{filename} was taken on {date_taken_month}/{date_taken_day}/{date_taken_year} at {date_taken_hour}:{str(date_taken_minute).zfill(2)} AM')
+        # Get date taken from a video
+        extension = ".mp4"
+        try:
+            video = MP4(filename)
+        except mutagen.mp4.MP4StreamInfoError:
+            print(f"{red('ERROR')} - Could not load video data from '{filename}'")
+            return 1
 
-    file_name = f'{date_taken_year}-{str(date_taken_month).zfill(2)}-{str(date_taken_day).zfill(2)} {str(date_taken_hour).zfill(2)}-{str(date_taken_minute).zfill(2)}'
+        date_stamp = video.get("\xa9day")
+        if date_stamp is None:
+            # Have the user manually enter the date
+            year, month, day, hour, minute = manual_date_entry(filename)
+        else:
+            if len(date_stamp.split("T")) != 2:
+                year, month, day, hour, minute = manual_date_entry(filename)
+            else:
+                date_taken, time_taken = date_stamp.split("T")
+                year, month, day = [int(i) for i in date_taken.split("-")]
+                hour, minute = [int(i) for i in time_taken.split(":")[0:2]]
+
+    # Print photo/video taken time
+    display_hour, am_pm = military_to_standard_time(hour)
+    if hour == 0:
+        print(f"{filename} was taken on {month}/{day}/{year} at {display_hour}:{str(minute).zfill(2)} {am_pm}")
+
+    file_name = f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)} {str(hour).zfill(2)}-{str(minute).zfill(2)}"
 
     # Get sequence number if it's a repeated date and time
     try:
@@ -75,21 +176,21 @@ def rename_file(filename: str) -> int:
         seq_num = 0
 
     # Add the sequence number to the file name
-    if seq_num:
+    if seq_num > 0:
         # Increment sequence number and append current sequence number to the file name
         seq_nums[file_name] = seq_num + 1
-        file_name = f'{file_name} {seq_num}'
+        file_name = f"{file_name} {seq_num}"
 
     # Rename file
     try:
-        os.rename(filename, f'{file_name}.jpg')
-        print(f'{green("Renaming")} {filename} -> {file_name}.jpg')
+        os.rename(filename, f"{file_name}{extension}")
+        print(f'{green("Renaming")} {filename} -> {file_name}{extension}')
     except FileExistsError:
         # If that file name is already in use, change the existing one to 1, and add to sequence number dictionary
-        os.rename(f'{file_name}.jpg', f'{file_name} 1.jpg')
-        print(f'{green("Renaming")} {file_name}.jpg -> {file_name} 1.jpg')
-        os.rename(filename, f'{file_name} 2.jpg')
-        print(f'{green("Renaming")} {filename} -> {file_name} 2.jpg')
+        os.rename(f"{file_name}{extension}", f"{file_name} 1{extension}")
+        print(f'{green("Renaming")} {file_name}{extension} -> {file_name} 1{extension}')
+        os.rename(filename, f"{file_name} 2{extension}")
+        print(f'{green("Renaming")} {filename} -> {file_name} 2{extension}')
         seq_nums[file_name] = 3
 
     return 0
@@ -112,9 +213,9 @@ def main(directory: str) -> int:
     file_list = os.listdir(directory)
     for filename in file_list:
         if os.path.isdir(filename):
-            main(f'{os.getcwd()}\\{filename}')
+            main(f"{os.getcwd()}\\{filename}")
             os.chdir(directory)
-        if filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg'):
+        if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg") or filename.lower().endswith(".mp4"):
             rename_file(filename)
 
     return 0
@@ -122,7 +223,7 @@ def main(directory: str) -> int:
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('directory', help='The directory to search for JPGs to rename')
+    parser.add_argument("directory", help="The directory to search for JPGs to rename")
     args = parser.parse_args()
 
     sys.exit(main(args.directory))
