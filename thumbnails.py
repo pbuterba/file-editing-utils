@@ -3,7 +3,7 @@
 @brief     Script for converting photos into thumbnail size by scaling them down
 @copyright 2026 Preston Buterbaugh
 @date      7/18/2026
-@update    7/18/2026
+@update    11/10/2026
 @author    Preston Buterbaugh
 
 @credit    geeksforgeeks.org/python/python-pil-image-resize-method/
@@ -80,6 +80,8 @@ def main(directory: str, percent_scale: int) -> int:
     else:
         print(f"{red(directory)} is not a valid directory")
         return 1
+
+    return 0
 
 
 if __name__ == "__main__":
