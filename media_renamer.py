@@ -1,9 +1,9 @@
 """
-@package photo_renamer
+@package media_renamer
 @brief   A script to re-name JPG and MP4 files based on their "Date Taken" attribute
 
 @date    12/16/2023
-@updated 11/8/2026
+@updated 11/10/2026
 
 @author  Preston Buterbaugh
 @credit  Piexif info from https://piexif.readthedocs.io/en/latest/functions.html
@@ -14,6 +14,7 @@
 from argparse import ArgumentParser
 import os
 import sys
+from typing import Tuple
 
 import piexif
 import mutagen.mp4
@@ -31,71 +32,72 @@ seq_nums = {}
 """A dictionary mapping each date-time string to the next number that should be appended to a photo at that time"""
 
 
-def manual_date_entry(filename: str) -> (int, int, int, int, int):
+def manual_date_entry(filename: str) -> Tuple[int, int, int, int, int]:
     """
     @brief  Allows the user to manually enter a date, ideally with as little effort as possible
     @param  filename: The name of the file for which the date is being input
     @return (int, int, int, int, int) The components of the date, in order year, month, day, hour, minute
     """
     valid_date = False
+    year, month, day, hour, minute = 0, 0, 0, 0, 0
 
     while not valid_date:
         video_date_string = input(f"Enter the date components for {green(filename)}, separated by spaces (Year, Month, Day, Hour, Minute: ")
         while len(video_date_string.split(" ")) != 5:
             video_date_string = input("Enter all 5 components of the date (Year, Month, Day, Hour, Minute")
 
-        year, month, day, hour, minute = video_date_string.split(" ")
+        year_string, month_string, day_string, hour_string, minute_string = video_date_string.split(" ")
 
         # Process year
         try:
-            year = int(year)
+            year = int(year_string)
         except ValueError:
-            print(f"Invalid year '{red(year)}'")
+            print(f"Invalid year '{red(year_string)}'")
             continue
 
         # Process month
-        if month in MONTH_FULL_NAMES:
-            month = str(MONTH_FULL_NAMES.index(month) + 1).zfill(2)
-        elif month in MONTH_ABBREVIATIONS:
-            month = str(MONTH_ABBREVIATIONS.index(month) + 1).zfill(2)
+        if month_string in MONTH_FULL_NAMES:
+            month = MONTH_FULL_NAMES.index(month_string) + 1
+        elif month_string in MONTH_ABBREVIATIONS:
+            month = MONTH_ABBREVIATIONS.index(month_string) + 1
         else:
             # Parse month as number
             try:
-                month_num = int(month)
+                month = int(month_string)
             except ValueError:
-                month_num = -1
+                month = -1
 
-            if 1 <= month_num <= 12:
-                month = str(month_num).zfill(2)
-            else:
-                print(f"Invalid month '{red(month)}' entered")
+            if month < 1 or month > 12:
+                print(f"Invalid month '{red(month_string)}' entered")
                 continue
 
         # Process day
         try:
-            day = int(day)
+            day = int(day_string)
         except ValueError:
-            print(f"Invalid day '{red(day)}'")
+            print(f"Invalid day '{red(day_string)}'")
             continue
 
         # Process hour
         try:
-            hour = int(hour)
+            hour = int(hour_string)
         except ValueError:
-            print(f"Invalid hour '{red(hour)}'")
+            print(f"Invalid hour '{red(hour_string)}'")
             continue
 
         # Process minute
         try:
-            minute = int(minute)
+            minute = int(minute_string)
         except ValueError:
-            print(f"Invalid minute '{red(minute)}'")
+            print(f"Invalid minute '{red(minute_string)}'")
             continue
 
-        return year, month, day, hour, minute
+        valid_date = True
+
+    return year, month, day, hour, minute
 
 
-def military_to_standard_time(hour: int) -> (int, str):
+def military_to_standard_time(hour: int) -> Tuple[int, str]:
     """
     @brief  Converts from an hour on the 24-hour scale to an hour on the twelve-hour scale
     @param  hour: The hour on the 24-hour scale
